@@ -1,153 +1,154 @@
 #!/usr/bin/env python3
 """
-OBIAI SDK Setup Script
-Handles Cython compilation with platform-specific optimizations for WSL/Windows
+OBIAI SDK - Root setup.py
+
+Builds Cython extensions for the obi.* namespace.
+Run from: C:\\Users\\OBINexus\\Projects\\obiai-sdk\\
+    python setup.py build_ext --inplace
+
+All source paths are relative to this file (the monorepo root), NOT to obi-sdk/.
 """
 
 import os
-import sys
 import platform
+import sys
 from pathlib import Path
 
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, find_packages
 from Cython.Build import cythonize
-import numpy as np
 
-# Platform detection
 IS_WINDOWS = platform.system() == "Windows"
-IS_WSL = "microsoft" in platform.release().lower() or "WSL" in platform.release()
-IS_LINUX = platform.system() == "Linux" and not IS_WSL
 
-# Compiler flags
-EXTRA_COMPILE_ARGS = []
-EXTRA_LINK_ARGS = []
-DEFINE_MACROS = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
+# Resolve monorepo root (same directory as this file)
+MONOREPO_ROOT = Path(__file__).resolve().parent
 
-if IS_WINDOWS:
-    # MSVC flags
-    EXTRA_COMPILE_ARGS.extend(["/O2", "/W3", "/GL", "/MD", "/std:c11"])
-    EXTRA_LINK_ARGS.extend(["/LTCG", "/DLL"])
-    DEFINE_MACROS.extend([("WIN32", "1"), ("_WINDOWS", "1"), ("OBI_EXPORTS", "1")])
-elif IS_WSL or IS_LINUX:
-    # GCC/Clang flags
-    EXTRA_COMPILE_ARGS.extend([
-        "-O3", "-march=native", "-fPIC", "-Wall", "-Wextra",
-        "-fvisibility=hidden",  # Hide symbols by default
-        "-std=c11", "-ffast-math"
-    ])
-    EXTRA_LINK_ARGS.extend(["-shared", "-fvisibility=hidden"])
-    if IS_WSL:
-        DEFINE_MACROS.append(("WSL_BUILD", "1"))
+# Add scripts/ to path so we can import build helpers
+sys.path.insert(0, str(MONOREPO_ROOT / "scripts"))
+from build_cython import get_extensions, CYTHON_DIRECTIVES  # noqa: E402
 
-# Include directories
-INCLUDE_DIRS = [
-    np.get_include(),
-    "bindings/c/include",
-    "bindings/cython",
-]
+# ---------------------------------------------------------------------------
+# libpolycall-v1 location
+# Only link against it if the compiled library actually exists on disk.
+# The directory may exist (e.g. empty clone) without a built library.
+# ---------------------------------------------------------------------------
+LIBPOLYCALL_ROOT = Path(
+    os.environ.get("LIBPOLYCALL_ROOT", str(MONOREPO_ROOT / "obi-sdk" / "libpolycall-v1"))
+)
 
-# Library directories (for libpolycall-v1)
-LIBRARY_DIRS = []
-LIBRARIES = []
+extra_include_dirs = []
+extra_lib_dirs = []
+extra_libraries = []
 
-# Try to find libpolycall-v1
-LIBPOLYCALL_ROOT = os.environ.get("LIBPOLYCALL_ROOT", "../libpolycall-v1")
-if Path(LIBPOLYCALL_ROOT).exists():
-    INCLUDE_DIRS.append(f"{LIBPOLYCALL_ROOT}/include")
-    LIBRARY_DIRS.append(f"{LIBPOLYCALL_ROOT}/lib")
-    LIBRARIES.append("polycall")
+if LIBPOLYCALL_ROOT.exists():
+    inc = LIBPOLYCALL_ROOT / "include"
+    lib_dir = LIBPOLYCALL_ROOT / "lib"
+    built_so = LIBPOLYCALL_ROOT / "build" / "libpolycall.so"
+    built_dll = LIBPOLYCALL_ROOT / "build" / "Release" / "polycall.dll"
 
-# Cython extensions
-EXTENSIONS = [
-    Extension(
-        "obi_sdk.bindings._core",
-        sources=["bindings/cython/_core.pyx"],
-        include_dirs=INCLUDE_DIRS,
-        library_dirs=LIBRARY_DIRS,
-        libraries=LIBRARIES,
-        extra_compile_args=EXTRA_COMPILE_ARGS,
-        extra_link_args=EXTRA_LINK_ARGS,
-        define_macros=DEFINE_MACROS,
-        language="c",
-    ),
-    Extension(
-        "obi_sdk.drivers._poly_driver",
-        sources=["drivers/core/_poly_driver.pyx"],
-        include_dirs=INCLUDE_DIRS,
-        library_dirs=LIBRARY_DIRS,
-        libraries=LIBRARIES,
-        extra_compile_args=EXTRA_COMPILE_ARGS,
-        extra_link_args=EXTRA_LINK_ARGS,
-        define_macros=DEFINE_MACROS,
-        language="c",
-    ),
-]
+    if inc.exists():
+        extra_include_dirs.append(str(inc))
 
-# Cython compiler directives
-CYTHON_DIRECTIVES = {
-    "language_level": "3",
-    "embedsignature": True,
-    "boundscheck": False,
-    "wraparound": False,
-    "cdivision": True,
-    "profile": os.environ.get("CYTHON_TRACE", "0") == "1",
-    "linetrace": os.environ.get("CYTHON_TRACE", "0") == "1",
-}
+    # Only add linker flags if the library is actually compiled
+    if built_so.exists() or built_dll.exists():
+        if lib_dir.exists():
+            extra_lib_dirs.append(str(lib_dir))
+        extra_libraries.append("polycall")
+        print(f"INFO: Linking against libpolycall-v1 at {LIBPOLYCALL_ROOT}")
+    else:
+        print(
+            f"INFO: libpolycall-v1 source found at {LIBPOLYCALL_ROOT} but not yet built.\n"
+            "      Building without polycall linkage (stub-only mode).\n"
+            "      To enable: build libpolycall-v1 first, then re-run setup.py.",
+            file=sys.stderr,
+        )
+else:
+    print(f"INFO: libpolycall-v1 not found at {LIBPOLYCALL_ROOT} — stub-only build.", file=sys.stderr)
 
-# Custom build command to handle libpolycall-v1
-from setuptools.command.build_ext import build_ext as _build_ext
+# ---------------------------------------------------------------------------
+# Cython extensions (paths rooted at obi/)
+# ---------------------------------------------------------------------------
+EXTENSIONS = get_extensions(
+    MONOREPO_ROOT,
+    extra_include_dirs=extra_include_dirs,
+    extra_lib_dirs=extra_lib_dirs,
+    extra_libraries=extra_libraries,
+)
 
-class build_ext(_build_ext):
-    def run(self):
-        # Ensure libpolycall-v1 is built first
-        self._build_libpolycall()
-        super().run()
-        
-        # Post-build: copy DLLs on Windows
-        if IS_WINDOWS:
-            self._copy_windows_dlls()
-    
-    def _build_libpolycall(self):
-        """Build libpolycall-v1 if not already built"""
-        lib_root = Path(LIBPOLYCALL_ROOT)
-        if not lib_root.exists():
-            print(f"WARNING: libpolycall-v1 not found at {lib_root}")
-            return
-        
-        build_dir = lib_root / "build"
-        if not (build_dir / "libpolycall.so").exists() and not (build_dir / "polycall.dll").exists():
-            print("Building libpolycall-v1...")
-            import subprocess
-            build_dir.mkdir(exist_ok=True)
-            
-            cmake_args = ["-DCMAKE_BUILD_TYPE=Release"]
-            if IS_WINDOWS:
-                cmake_args.append("-A x64")
-            
-            subprocess.run(["cmake", ".."] + cmake_args, cwd=build_dir, check=True)
-            subprocess.run(["cmake", "--build", ".", "--config", "Release"], cwd=build_dir, check=True)
-    
-    def _copy_windows_dlls(self):
-        """Copy required DLLs to package directory on Windows"""
-        import shutil
-        dll_source = Path(LIBPOLYCALL_ROOT) / "build" / "Release" / "polycall.dll"
-        if dll_source.exists():
-            for ext in self.extensions:
-                ext_path = Path(self.get_ext_fullpath(ext.name))
-                shutil.copy2(dll_source, ext_path.parent)
-
-# Cythonize extensions
 ext_modules = cythonize(
     EXTENSIONS,
     compiler_directives=CYTHON_DIRECTIVES,
     annotate=os.environ.get("CYTHON_ANNOTATE", "0") == "1",
-    nthreads=int(os.environ.get("CYTHON_NTHREADS", "4")),
+    # nthreads > 0 uses multiprocessing which requires if __name__=='__main__'
+    # on Windows (spawn-based). Always use 0 (single-threaded) to avoid the
+    # RuntimeError: "attempt to start new process before bootstrapping" crash.
+    nthreads=0 if IS_WINDOWS else int(os.environ.get("CYTHON_NTHREADS", "4")),
 )
 
+# ---------------------------------------------------------------------------
+# Custom build_ext: build libpolycall-v1 first if needed, copy DLLs on Windows
+# ---------------------------------------------------------------------------
+
+from setuptools.command.build_ext import build_ext as _build_ext
+
+
+class build_ext(_build_ext):
+    def run(self):
+        self._build_libpolycall()
+        super().run()
+        if IS_WINDOWS:
+            self._copy_windows_dlls()
+
+    def _build_libpolycall(self):
+        if not LIBPOLYCALL_ROOT.exists():
+            return
+        cmake_lists = LIBPOLYCALL_ROOT / "CMakeLists.txt"
+        if not cmake_lists.exists():
+            print(
+                f"INFO: Skipping libpolycall-v1 build — CMakeLists.txt not found at {LIBPOLYCALL_ROOT}",
+                file=sys.stderr,
+            )
+            return
+        build_dir = LIBPOLYCALL_ROOT / "build"
+        so = build_dir / "libpolycall.so"
+        dll = build_dir / "Release" / "polycall.dll"
+        if so.exists() or dll.exists():
+            return
+        print("Building libpolycall-v1...")
+        import subprocess
+        build_dir.mkdir(exist_ok=True)
+        cmake_args = ["-DCMAKE_BUILD_TYPE=Release"]
+        if IS_WINDOWS:
+            cmake_args.append("-A x64")
+        subprocess.run(["cmake", str(LIBPOLYCALL_ROOT)] + cmake_args, cwd=build_dir, check=True)
+        subprocess.run(
+            ["cmake", "--build", ".", "--config", "Release"],
+            cwd=build_dir,
+            check=True,
+        )
+
+    def _copy_windows_dlls(self):
+        import shutil
+        dll_source = LIBPOLYCALL_ROOT / "build" / "Release" / "polycall.dll"
+        if not dll_source.exists():
+            return
+        for ext in self.extensions:
+            ext_path = Path(self.get_ext_fullpath(ext.name))
+            shutil.copy2(dll_source, ext_path.parent)
+
+
+# ---------------------------------------------------------------------------
+# Setup
+# ---------------------------------------------------------------------------
 setup(
+    name="obi-sdk",
+    version="0.1.0-alpha",
+    description="Ontological Bayesian Intelligence SDK — obi namespace",
+    author="Nnamdi Michael Okpala",
+    license="MIT",
+    packages=find_packages(include=["obi", "obi.*"]),
+    package_dir={"": "."},
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
-    packages=find_packages(exclude=["tests", "tests.*"]),
-    package_dir={"": "."},
     zip_safe=False,
+    python_requires=">=3.9",
 )
