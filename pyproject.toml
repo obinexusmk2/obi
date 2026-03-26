@@ -1,0 +1,85 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel",
+    "Cython>=3.0.0",
+    "numpy>=1.21.0",
+    "scikit-build-core>=0.5.0; platform_system!='Windows'",
+    "cmake>=3.20; platform_system!='Windows'"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "obi-sdk"
+version = "0.1.0-alpha"
+description = "Ontological Bayesian Intelligence SDK - Non-monolithic AI infrastructure"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Nnamdi Michael Okpala", email = "obinexus@example.com"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: C",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.21.0",
+    "cffi>=1.15.0",
+    "typing-extensions>=4.0.0",
+    "uche @ git+https://github.com/obinexus/uche.git@main",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "mypy>=1.0.0",
+    "Cython>=3.0.0",
+    "cmake>=3.20",
+]
+docs = [
+    "sphinx>=5.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/obinexusmk2/obi-sdk"
+Documentation = "https://obinexusmk2.github.io/obi-sdk"
+Repository = "https://github.com/obinexusmk2/obi-sdk.git"
+Issues = "https://github.com/obinexusmk2/obi-sdk/issues"
+
+[tool.setuptools]
+packages = ["obi_sdk", "obi_sdk.bindings", "obi_sdk.drivers", "obi_sdk.core"]
+zip-safe = false
+
+[tool.setuptools.package-data]
+"obi_sdk.bindings" = ["*.pxd", "*.pyx", "*.h", "*.dll", "*.so", "*.dylib"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312']
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=obi_sdk --cov-report=term-missing"

@@ -1,0 +1,60 @@
+{% set name = "obi-sdk" %}
+{% set version = "0.1.0-alpha" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
+  skip: true  # [py<39]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - cmake >=3.20
+    - make  # [not win]
+    - ninja  # [win]
+    - cython >=3.0.0
+  
+  host:
+    - python
+    - pip
+    - numpy >=1.21.0
+  
+  run:
+    - python
+    - {{ pin_compatible('numpy') }}
+    - cffi >=1.15.0
+    - typing-extensions >=4.0.0
+    - uche
+
+test:
+  imports:
+    - obi_sdk
+    - obi_sdk.sdk
+  commands:
+    - pytest tests/ -v
+  requires:
+    - pytest >=7.0.0
+
+about:
+  home: https://github.com/obinexusmk2/obi-sdk
+  license: MIT
+  license_family: MIT
+  summary: 'Ontological Bayesian Intelligence SDK - Non-monolithic AI infrastructure'
+  description: |
+    OBIAI SDK provides ontological Bayesian inference engines,
+    dimensional game theory solvers, and filter-flash memory
+    architectures for unbiased AI systems.
+  doc_url: https://obinexusmk2.github.io/obi-sdk
+  dev_url: https://github.com/obinexusmk2/obi-sdk
+
+extra:
+  recipe-maintainers:
+    - obinexus
