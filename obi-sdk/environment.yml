@@ -1,0 +1,32 @@
+name: obi-sdk-dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.9,<3.13
+  - pip
+  - numpy>=1.21.0
+  - cython>=3.0.0
+  - cmake>=3.20
+  - make
+  - compilers  # Platform-appropriate compiler suite
+  - pkg-config
+  
+  # Development tools
+  - pytest>=7.0.0
+  - pytest-cov>=4.0.0
+  - black>=22.0.0
+  - mypy>=1.0.0
+  - sphinx>=5.0.0
+  - sphinx-rtd-theme>=1.0.0
+  
+  # Documentation
+  - jupyter
+  - matplotlib
+  
+  # Windows-specific (no-op on other platforms)
+  - m2w64-toolchain  # [win]
+  
+  # pip dependencies not in conda
+  - pip:
+    - git+https://github.com/obinexus/uche.git@main
