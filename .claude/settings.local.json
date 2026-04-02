@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm run:*)",
+      "Bash(npm query:*)",
+      "Bash(node --input-type=module --eval \"import\\(''file:///c:/Users/OBINexus/Projects/obix/obix-sdk/obix-sdk/packages/config/eslint/dist/index.js''\\).then\\(m => { console.log\\(''exports:'', Object.keys\\(m\\)\\); console.log\\(''baseConfig env:'', m.baseConfig.env\\); console.log\\(''devConfig length:'', m.createDevConfig\\(\\).length\\); }\\)\")"
+    ]
+  }
+}
