@@ -87,6 +87,9 @@ ext_modules = cythonize(
     EXTENSIONS,
     compiler_directives=CYTHON_DIRECTIVES,
     annotate=os.environ.get("CYTHON_ANNOTATE", "0") == "1",
+    # nthreads > 0 uses multiprocessing which requires if __name__=='__main__'
+    # on Windows (spawn-based). Always use 0 (single-threaded) to avoid the
+    # RuntimeError: "attempt to start new process before bootstrapping" crash.
     nthreads=0 if IS_WINDOWS else int(os.environ.get("CYTHON_NTHREADS", "4")),
 )
 
@@ -148,13 +151,3 @@ class build_ext(_build_ext):
 setup(
     name="obi",
     version="0.1.0-alpha",
-    description="Ontological Bayesian Intelligence SDK — obi namespace",
-    author="Nnamdi Michael Okpala",
-    license="MIT",
-    packages=find_packages(include=["obi", "obi.*"]),
-    package_dir={"": "."},
-    ext_modules=ext_modules,
-    cmdclass={"build_ext": build_ext},
-    zip_safe=False,
-    python_requires=">=3.9",
-)

@@ -69,6 +69,7 @@ def get_extensions(
     extra_include_dirs: Optional[List[str]] = None,  # noqa: F821
     extra_lib_dirs: Optional[List[str]] = None,
     extra_libraries: Optional[List[str]] = None,
+    extra_sources: Optional[List[str]] = None,  # noqa: F821
 ) -> List["Extension"]:  # noqa: F821
     """
     Return Cython Extension objects for all obi.* Cython modules.
@@ -78,6 +79,7 @@ def get_extensions(
         extra_include_dirs: Additional -I paths (e.g. libpolycall-v1/include).
         extra_lib_dirs:     Additional -L paths.
         extra_libraries:    Additional -l libraries.
+        extra_sources:      Additional C source files to compile with extensions.
 
     Returns:
         List[Extension] ready to be passed to cythonize().
@@ -108,10 +110,17 @@ def get_extensions(
     core_pyx = str(monorepo_root / "obi" / "bindings" / "cython" / "_core.pyx")
     poly_pyx = str(monorepo_root / "obi" / "drivers" / "core" / "_poly_driver.pyx")
 
+    # Prepare sources with optional stubs (both extensions need stub symbols)
+    core_sources = [core_pyx]
+    poly_sources = [poly_pyx]
+    if extra_sources:
+        core_sources.extend(extra_sources)
+        poly_sources.extend(extra_sources)
+
     extensions = [
         Extension(
             "obi.bindings._core",
-            sources=[core_pyx],
+            sources=core_sources,
             include_dirs=include_dirs,
             library_dirs=lib_dirs,
             libraries=libraries,
@@ -122,7 +131,7 @@ def get_extensions(
         ),
         Extension(
             "obi.drivers._poly_driver",
-            sources=[poly_pyx],
+            sources=poly_sources,
             include_dirs=include_dirs,
             library_dirs=lib_dirs,
             libraries=libraries,
