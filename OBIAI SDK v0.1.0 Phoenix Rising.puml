@@ -1,0 +1,180 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam package {
+    BackgroundColor<<Python>> #E1F5FE
+    BackgroundColor<<Cython>> #FFF3E0
+    BackgroundColor<<FFI>> #F3E5F5
+    BorderColor #333
+}
+skinparam rectangle {
+    BackgroundColor<<Core>> #FFCCBC
+    BorderColor #333
+}
+skinparam note {
+    BackgroundColor #FFF9C4
+}
+
+title OBIAI SDK v0.1.0 "Phoenix Rising" — Polyglot Package Architecture
+
+' === ROOT ===
+package "obi" <<System>> {
+
+    ' === LAYER 1: CORE (Cython/Rust FFI) ===
+    package "obi.core" <<Cython>> {
+        package "obi.core.probe" {
+            rectangle "probe_internal" <<Core>> {
+                note right
+                  D → S
+                  Data → Internal State
+                  "Know Thyself"
+                end note
+            }
+            rectangle "probe_external" <<Core>> {
+                note right
+                  S → D
+                  State → External Data
+                  "Act Upon the World"
+                end note
+            }
+        }
+        
+        package "obi.core.bayesian" {
+            [OntologicalEngine] : The Heart AI
+            [BiasMitigator] : Bayesian Network
+            note bottom of obi.core.bayesian
+              Derived from:
+              "Formal Argument for Bias in AI"
+              "Ontological Bayesian Intelligence Architecture"
+            end note
+        }
+        
+        package "obi.core.governance" {
+            [AEGIS_Gate]
+            [Consensus_95_4] : 95.4% Threshold
+            [Trident_Channel] : CH_0 | CH_1 | CH_2
+            note bottom
+              Derived from:
+              "AEGIS Proof", "95.4 Metric",
+              "Gating Strategy"
+            end note
+        }
+    }
+
+    ' === LAYER 2: COGNITION (Python/Cython Hybrid) ===
+    package "obi.cognition" <<Python>> {
+        package "obi.cognition.filterflash" {
+            [FilterCycle] : Epistemic Filtering
+            [FlashCycle] : Structured Storage / Recap
+            [DAG_Cognition] : DAG Cost Function Engine
+            note bottom
+              Derived from:
+              "OBIAI Filter Flash DAG Cognition Engine"
+              "Epistemic Continuity Analysis"
+            end note
+        }
+        
+        package "obi.cognition.dimensional" {
+            [DimensionalGameTheory]
+            [VaradicStrategy] : Multi-Domain Strategy
+            note bottom
+              Derived from:
+              "Dimensional Game Theory"
+              "Fault Tolerant Cryptographic Integration"
+            end note
+        }
+    }
+
+    ' === LAYER 3: MEMORY (Cython) ===
+    package "obi.memory" <<Cython>> {
+        package "obi.memory.diram" {
+            [DIRAM_Gates] : Boolean Logic Truth Table
+            [ConsciousnessStack] : Phenomemory / Phenovalue
+            note bottom
+              Derived from:
+              "DIRAM Boolean Logic Truth Table"
+              "The OBINexus Consciousness Stack"
+            end note
+        }
+        
+        package "obi.memory.quantum" {
+            [QuantumFilterFlash]
+            [UQCBP] : Unified Quantum Classical Bridge
+            note bottom
+              Derived from:
+              "Quantum Filter Flash Memory Architecture"
+              "Unified Quantum Classical Bridge Protocol"
+            end note
+        }
+    }
+
+    ' === LAYER 4: DATA & INTEGRITY ===
+    package "obi.data" <<Python>> {
+        package "obi.data.marshalling" {
+            [ZeroOverheadMarshaller]
+            [DataDriftMitigator]
+            note bottom
+              Derived from:
+              "Zero Overhead Data Marshalling"
+              "Data Drift Mitigation"
+            end note
+        }
+    }
+    
+    package "obi.integrity" <<Cython>> {
+        package "obi.integrity.security" {
+            [AuraSeal] : Regulation As Firmware
+            [ZID_Auth] : ZID Key Authorization
+            [PasswordRotation] : Machine Verifiable
+            note bottom
+              Derived from:
+              "AuraSeal Validation", "ZID Key",
+              "Password Rotation Scheme"
+            end note
+        }
+    }
+
+    ' === LAYER 5: TELEMETRY (Python) ===
+    package "obi.telemetry" <<Python>> {
+        package "obi.telemetry.intention" {
+            [IntentionPromoter]
+            [AssistiveTelemetry]
+            [SensorDimensionalControl]
+            note bottom
+              Derived from:
+              "Intention Promotion & Assistive Telemetry"
+              "Sensor Dimensional Control Framework"
+            end note
+        }
+    }
+
+    ' === LAYER 6: POLYGLOT FFI ===
+    package "obi.polyglot" <<FFI>> {
+        package "obi.polyglot.ffi" {
+            [Rust_Core_LLM] : Base LLM (Rust)
+            [Node_Binding]
+            [CSharp_Binding]
+            [Python_Cython_Bridge] : py_obi / cobi
+        }
+        note bottom of obi.polyglot
+          OBI Codex:
+          Downloadable, adaptable on-the-fly
+          for drones, cars, robots, web
+        end note
+    }
+
+}
+
+' === DEPENDENCIES & DATA FLOW ===
+obi.core.probe --> obi.core.bayesian : state_vector
+obi.core.bayesian --> obi.core.governance : coherence_score
+obi.core.governance --> obi.cognition.filterflash : gate_signal\n(YES/NO/MAYBE)
+obi.cognition.filterflash --> obi.memory.diram : epistemic_store
+obi.memory.diram --> obi.memory.quantum : superposition_buffer
+obi.cognition.dimensional --> obi.telemetry.intention : strategic_vector
+obi.data.marshalling --> obi.core.probe : marshalled_D_S
+obi.integrity.security --> obi.core.governance : trust_anchor
+obi.polyglot.ffi --> obi.core.bayesian : foreign_features\n(Rust LLM)
+obi.telemetry.intention --> obi.core.probe : external_feedback\n(S → D)
+
+@enduml
