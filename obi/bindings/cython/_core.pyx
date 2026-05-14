@@ -1,167 +1,169 @@
-# cython: language_level=3, embedsignature=True, boundscheck=False, wraparound=False, cdivision=True
+# cython: language_level=3
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: cdivision=True
 
 """
-OBI Core Cython Extension - Direct libpolycall-v1 bindings
-Ontological Bayesian Intelligence - Core C/C++ interface
+OBIAI SDK Core - Ontological Bayesian Intelligence
+Non-monolithic Cython extension for libpolycall-v1
+
+Problem: [PROB-01] Self-Blindness — enable system to interrogate internal state
+Proof Source: Probe Hypothesis, AEGIS-PROOF-1.1
+License: OBINexus Constitutional Legal Framework
+Confidence Threshold: 95.4%
 """
 
+import os
+import sys
 import numpy as np
-from typing import Dict, Any, Optional
-from libc.stdint cimport uint32_t, uint64_t, int32_t
-from libc.string cimport memcpy
+from libc.stdlib cimport malloc, free
+from libc.string cimport strcpy, strlen
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from cpython.bytes cimport PyBytes_AsString
 
-# External C declarations for libpolycall-v1
+cimport numpy as cnp
+
+# Initialize numpy for array interface
+cnp.import_array()
+
+# Include libpolycall header definitions inline
 cdef extern from "polycall.h" nogil:
-    ctypedef struct polycall_context:
+    ctypedef struct obi_context_t:
         pass
 
-    ctypedef struct polycall_result:
-        uint32_t code
-        const char* message
+    ctypedef struct obi_tensor_t:
+        size_t ndim
+        size_t* shape
+        double* data
 
-    # Core API functions
-    polycall_context* polycall_context_create(const char* config)
-    void polycall_context_destroy(polycall_context* ctx)
+    # OBI Core functions
+    obi_context_t* obi_create_context(const char* config) except NULL
+    void obi_destroy_context(obi_context_t* ctx) noexcept
+    int obi_process_tensor(obi_context_t* ctx, obi_tensor_t* input, obi_tensor_t* output) except -1
+    const char* obi_get_version() noexcept
+    int obi_set_log_level(int level) noexcept
 
-    polycall_result polycall_infer(
-        polycall_context* ctx,
-        const float* evidence,
-        uint32_t evidence_len,
-        float* posterior,
-        uint32_t posterior_len
-    ) nogil
+# Version info
+__version__ = "0.1.0-alpha"
+__author__ = "Nnamdi Michael Okpala (OBINexus)"
 
-    const char* polycall_get_version()
-    uint32_t polycall_is_valid(polycall_context* ctx)
+# Platform-specific DLL loading
+cdef void _ensure_dll_path():
+    """Ensure DLLs are loadable on Windows/WSL"""
+    if sys.platform == "win32":
+        import os
+        conda_prefix = os.environ.get("CONDA_PREFIX")
+        if conda_prefix:
+            os.add_dll_directory(os.path.join(conda_prefix, "Library", "bin"))
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        os.add_dll_directory(os.path.join(script_dir, "..", "..", "lib"))
 
+# Initialize on import
+_ensure_dll_path()
 
 cdef class OBIContext:
     """
-    High-level wrapper for libpolycall-v1 context
-    Manages lifecycle and exposes inference operations
+    [PROB-05] OBI AI Context - Manages ontological Bayesian inference session
+    
+    This is the core handle for interacting with libpolycall-v1.
+    Non-monolithic: contexts are isolated and can be dynamically loaded.
     """
-    cdef polycall_context* _ctx
-    cdef str _id
-    cdef dict _config
-
-    def __cinit__(self, config: Optional[Dict[str, Any]] = None, context_id: Optional[str] = None):
-        """Initialize OBI context with libpolycall-v1"""
-        self._config = config or {}
-        self._id = context_id or f"ctx_{id(self)}"
-
-        # Convert config to JSON string for C function
-        import json
-        config_json = json.dumps(self._config)
-        cdef bytes config_bytes = config_json.encode('utf-8')
-
+    cdef obi_context_t* _ctx
+    cdef bint _initialized
+    cdef str _config
+    
+    def __cinit__(self, str config_json=None):
+        """Initialize OBI context with governance gate"""
+        self._ctx = NULL
+        self._initialized = False
+        self._config = config_json or "{}"
+        
+        cdef bytes config_bytes = self._config.encode('utf-8')
+        cdef const char* c_config = PyBytes_AsString(config_bytes)
+        
+        if c_config is NULL:
+            raise ValueError("Failed to encode config string")
+        
         with nogil:
-            self._ctx = polycall_context_create(config_bytes)
-
-        if self._ctx == NULL:
-            raise RuntimeError("Failed to create OBI context in libpolycall-v1")
-
+            self._ctx = obi_create_context(c_config)
+        
+        if self._ctx is NULL:
+            raise RuntimeError("Failed to create OBI context from libpolycall-v1")
+        self._initialized = True
+    
     def __dealloc__(self):
-        """Cleanup context"""
-        if self._ctx != NULL:
-            with nogil:
-                polycall_context_destroy(self._ctx)
+        if self._ctx is not NULL:
+            obi_destroy_context(self._ctx)
             self._ctx = NULL
-
-    @property
-    def id(self) -> str:
-        """Get context ID"""
-        return self._id
-
-    @property
-    def config(self) -> Dict[str, Any]:
-        """Get context configuration"""
-        return self._config.copy()
-
-    def get_version(self) -> str:
-        """Get libpolycall-v1 version"""
-        cdef const char* version
-        with nogil:
-            version = polycall_get_version()
-        return version.decode('utf-8') if version != NULL else "unknown"
-
-    def is_valid(self) -> bool:
+    
+    cpdef bint is_valid(self):
         """Check if context is still valid"""
-        cdef uint32_t valid
-        with nogil:
-            valid = polycall_is_valid(self._ctx)
-        return bool(valid)
-
-    def infer(self, evidence: np.ndarray, prior: Optional[np.ndarray] = None) -> np.ndarray:
-        """
-        Perform Bayesian inference using libpolycall-v1
-
-        Args:
-            evidence: Input evidence array (float32)
-            prior: Optional prior distribution
-
-        Returns:
-            Posterior distribution (float32)
-        """
-        # Ensure contiguous float32 array
-        evidence = np.ascontiguousarray(evidence, dtype=np.float32)
-        cdef uint32_t evidence_len = evidence.size
-        cdef float[::1] evidence_view = evidence.flatten()
-
-        # Allocate posterior array
-        posterior = np.zeros(evidence.size, dtype=np.float32)
-        cdef float[::1] posterior_view = posterior
-
-        # Call libpolycall-v1 inference
-        cdef polycall_result result
-        with nogil:
-            result = polycall_infer(
-                self._ctx,
-                &evidence_view[0],
-                evidence_len,
-                &posterior_view[0],
-                evidence_len
-            )
-
-        if result.code != 0:
-            msg = result.message.decode('utf-8') if result.message != NULL else "Unknown error"
-            raise RuntimeError(f"Inference failed: {msg}")
-
-        return posterior.reshape(evidence.shape)
-
+        return self._ctx is not NULL and self._initialized
+    
+    cpdef str get_version(self):
+        """Get libpolycall version"""
+        cdef const char* ver = obi_get_version()
+        return ver.decode('utf-8') if ver else "unknown"
+    
+    @staticmethod
+    def set_log_level(int level):
+        """Set logging level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG)"""
+        obi_set_log_level(level)
 
 cdef class OBITensor:
     """
-    Lightweight tensor wrapper for OBI operations
-    Enforces 4D structure for dimensional consistency
+    [PROB-04] OBI Tensor - 4D consciousness-aware tensor wrapper
+    
+    Wraps obi_tensor_t with zero-copy numpy array interface.
+    Enforces 4D dimensional consistency per OBI memory architecture.
     """
-    cdef np.ndarray _data
-
-    def __cinit__(self, data: np.ndarray, dtype=np.float32):
-        """Initialize tensor with 4D validation"""
-        arr = np.asarray(data, dtype=dtype)
-        self._data = self._ensure_4d(arr)
-
-    cdef np.ndarray _ensure_4d(self, np.ndarray arr):
-        """Ensure tensor is 4D"""
-        if arr.ndim == 4:
-            return arr
-        elif arr.ndim < 4:
-            shape = tuple([1] * (4 - arr.ndim) + list(arr.shape))
-            return arr.reshape(shape)
-        else:
-            # Reduce to 4D by flattening middle dimensions
-            shape = (arr.shape[0], -1, arr.shape[-2], arr.shape[-1])
-            return arr.reshape(shape)
-
-    @property
-    def data(self) -> np.ndarray:
-        """Get underlying numpy array"""
-        return self._data
-
-    @property
-    def shape(self) -> tuple:
-        """Get tensor shape"""
-        return tuple(self._data.shape)
-
-    def __repr__(self) -> str:
-        return f"OBITensor(shape={self.shape})"
+    cdef obi_tensor_t* _tensor
+    cdef object _data_view
+    
+    def __cinit__(self, object shape not None, dtype=np.float32):
+        """Initialize tensor with 4D validation."""
+        cdef size_t i
+        cdef size_t ndim = len(shape)
+        cdef size_t total_size = 1
+        
+        if ndim != 4:
+            raise ValueError(f"OBI tensors must be 4D, got {ndim}D shape: {shape}")
+        
+        # Allocate tensor struct
+        self._tensor = <obi_tensor_t*>PyMem_Malloc(sizeof(obi_tensor_t))
+        if self._tensor is NULL:
+            raise MemoryError("Failed to allocate obi_tensor_t struct")
+        
+        # Allocate and populate shape array
+        self._tensor.ndim = ndim
+        self._tensor.shape = <size_t*>PyMem_Malloc(ndim * sizeof(size_t))
+        if self._tensor.shape is NULL:
+            PyMem_Free(self._tensor)
+            raise MemoryError("Failed to allocate shape array")
+        
+        for i in range(ndim):
+            if shape[i] <= 0:
+                PyMem_Free(self._tensor.shape)
+                PyMem_Free(self._tensor)
+                raise ValueError(f"Shape dimension {i} must be > 0, got {shape[i]}")
+            self._tensor.shape[i] = shape[i]
+            total_size *= shape[i]
+        
+        # Allocate data buffer
+        self._tensor.data = <double*>PyMem_Malloc(total_size * sizeof(double))
+        if self._tensor.data is NULL:
+            PyMem_Free(self._tensor.shape)
+            PyMem_Free(self._tensor)
+            raise MemoryError("Failed to allocate tensor data buffer")
+        
+        self._data_view = None
+    
+    def __dealloc__(self):
+        """Clean up allocated memory."""
+        if self._tensor is not NULL:
+            if self._tensor.shape is not NULL:
+                PyMem_Free(self._tensor.shape)
+            if self._tensor.data is not NULL:
+                PyMem_Free(self._tensor.data)
+            PyMem_Free(self._tensor)
+            self._tensor = NULL

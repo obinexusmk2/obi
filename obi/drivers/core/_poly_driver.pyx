@@ -1,15 +1,26 @@
 # cython: language_level=3, embedsignature=True, boundscheck=False, wraparound=False, cdivision=True
 
 """
-PolyDriver - Polymorphic driver for dimensional game theory and ontological reasoning
+[PROB-06] PolyDriver - Polymorphic driver for dimensional game theory and ontological reasoning
 Cython accelerated non-monolithic inference engine
+
+Problem: [PROB-06] Strategic Flatness — AI reasons linearly, not dimensionally
+Proof Source: Dimensional Game Theory
+License: OBINexus Constitutional Legal Framework
+Confidence Threshold: 95.4%
 """
 
 import numpy as np
 from typing import List, Tuple, Dict, Any, Optional, Callable
-from libc.stdint cimport uint32_t, uint64_t, int32_t, float32_t
+from libc.stdint cimport uint32_t, uint64_t, int32_t
+from libc.string cimport memcpy
 from libc.math cimport exp, log2, fabs
+from cpython.bytes cimport PyBytes_AsString
 cimport cython
+cimport numpy as cnp
+
+# Initialize numpy
+cnp.import_array()
 
 # Polycall C interface declarations
 cdef extern from "polycall.h" nogil:
@@ -54,20 +65,33 @@ cdef class PolyDriver:
         params: Optional[Dict[str, Any]] = None
     ):
         """
-        Initialize PolyDriver with specified solver type
+        [PROB-06] Initialize PolyDriver with specified solver type
+
+        Safely creates a polymorphic solver with dimensional game-theoretic reasoning.
 
         Args:
             solver_type: Type of solver (mixed_strategy, pure_strategy, evolutionary)
             params: Solver configuration parameters
+
+        Raises
+        ------
+        RuntimeError
+            If polycall solver creation fails
         """
         self._solver_type = solver_type
         self._params = params or {}
         self._solution_history = []
 
-        # Create solver via libpolycall
+        # Extract C string from Python bytes while holding GIL
         cdef bytes solver_bytes = solver_type.encode('utf-8')
+        cdef const char* c_solver_type = PyBytes_AsString(solver_bytes)
+
+        if c_solver_type is NULL:
+            raise ValueError("Failed to encode solver type")
+
+        # Release GIL only for the C call
         with nogil:
-            self._solver = polycall_solver_create(solver_bytes)
+            self._solver = polycall_solver_create(c_solver_type)
 
         if self._solver == NULL:
             raise RuntimeError(f"Failed to create solver: {solver_type}")
@@ -342,17 +366,10 @@ cdef class DimensionalReasoner:
             Complete solution with reasoning trace
         """
         solution, metrics = self._driver.solve_game(payoff_matrix)
-
-        self._reasoning_state = {
-            "mode": reasoning_mode,
-            "solution": solution.tolist(),
-            "metrics": metrics,
-            "entropy": self._driver.compute_entropy(solution)
+        reasoning_trace = {
+            "solver_type": self._solver_type,
+            "reasoning_mode": reasoning_mode,
+            "solution": solution.tolist() if hasattr(solution, 'tolist') else solution,
+            "metrics": metrics
         }
-
-        return self._reasoning_state
-
-    @property
-    def reasoning_state(self) -> Dict[str, Any]:
-        """Get current reasoning state"""
-        return self._reasoning_state.copy()
+        return reasoning_trace

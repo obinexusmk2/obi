@@ -140,7 +140,7 @@ class build_ext(_build_ext):
 # Setup
 # ---------------------------------------------------------------------------
 setup(
-    name="obi-sdk",
+    name="obi",
     version="0.1.0-alpha",
     description="Ontological Bayesian Intelligence SDK — obi namespace",
     author="Nnamdi Michael Okpala",
