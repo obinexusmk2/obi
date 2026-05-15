@@ -12,20 +12,14 @@
   ],
   "license": "MIT",
   "author": "Nnamdi Michael Okpala (OBINexus)",
-  "type": "commonjs",
-  "main": "backend/app.py",
   "scripts": {
-    "install": "npm install",
-    "dev": "webpack serve --mode development",
-    "build": "webpack --mode production",
+    "dev": "npx webpack serve --mode development",
+    "build": "npx webpack --mode production",
     "start": "python backend/app.py",
     "frontend": "python -m http.server 8000 --directory frontend"
   },
   "dependencies": {
-    "three": "^0.150.0",
-    "@mediapipe/camera_utils": "^0.4.1",
-    "@mediapipe/drawing_utils": "^0.4.1",
-    "@mediapipe/hands": "^0.4.1"
+    "three": "^0.150.0"
   },
   "devDependencies": {
     "webpack": "^5.88.0",

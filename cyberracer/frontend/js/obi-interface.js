@@ -107,3 +107,5 @@ ${reasoning.reasoning}
 }
 
 const obiInterface = new OBIInterface();
+
+export { obiInterface };

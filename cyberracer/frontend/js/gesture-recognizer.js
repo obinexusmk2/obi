@@ -149,3 +149,4 @@ class GestureRecognizer {
 
 // Initialize recognizer
 const gestureRecognizer = new GestureRecognizer();
+export { gestureRecognizer };

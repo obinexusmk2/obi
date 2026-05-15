@@ -235,3 +235,4 @@ class GameEngine {
 }
 
 const gameEngine = new GameEngine();
+export { gameEngine };

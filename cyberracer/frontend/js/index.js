@@ -11,27 +11,37 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 window.THREE = THREE;
 window.GLTFLoader = GLTFLoader;
 
-// Import MediaPipe (loaded as external scripts in HTML)
-// They will be available as window.Hands, window.Camera, etc.
-
 // Import application modules
 import { gestureRecognizer } from './gesture-recognizer.js';
 import { gameEngine } from './game-engine.js';
 import { obiInterface } from './obi-interface.js';
 import { CyberRacerApp } from './app.js';
 
+// Global app instance
+let appInstance = null;
+
 // Initialize and start the app
 async function main() {
-    const app = new CyberRacerApp();
-    
+    appInstance = new CyberRacerApp();
+
     // Store globally for access from HTML
-    window.app = app;
+    window.app = appInstance;
     window.gestureRecognizer = gestureRecognizer;
     window.gameEngine = gameEngine;
     window.obiInterface = obiInterface;
-    
-    console.log('✓ CyberRacer modules loaded');
+
+    console.log('CyberRacer modules loaded');
 }
+
+// startGame function exposed to HTML onclick handler
+window.startGame = async function() {
+    if (!appInstance) {
+        console.error('App not initialized yet');
+        return;
+    }
+    await appInstance.initialize();
+    appInstance.startGame();
+};
 
 // Start when DOM is ready
 if (document.readyState === 'loading') {

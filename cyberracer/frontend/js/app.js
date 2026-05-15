@@ -3,6 +3,10 @@
  * Integrates gesture recognition, game engine, and OBI reasoning
  */
 
+import { gestureRecognizer } from './gesture-recognizer.js';
+import { gameEngine } from './game-engine.js';
+import { obiInterface } from './obi-interface.js';
+
 class CyberRacerApp {
     constructor() {
         this.gestureRecognizer = gestureRecognizer;
@@ -124,3 +128,5 @@ window.addEventListener('resize', () => {
         app.gameEngine.camera.updateProjectionMatrix();
     }
 });
+
+export { CyberRacerApp };
