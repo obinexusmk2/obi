@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "obi"
+version = "0.1.0-alpha"
+description = "Ontological Bayesian Intelligence"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Nnamdi Michael Okpala", email = "okpalan@protonmail.com"}]
+requires-python = ">=3.9"
+dependencies = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/obinexusmk2/obi"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "black>=21.0",
+]
+
+[tool.setuptools]
+packages = ["obi"]
