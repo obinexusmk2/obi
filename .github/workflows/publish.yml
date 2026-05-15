@@ -1,0 +1,110 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+      - release
+    paths:
+      - 'obi/**'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine cython cmake
+          pip install -e ".[dev]"
+        working-directory: obi
+
+      - name: Build package
+        run: |
+          python -m pip install build
+          python -m build
+        working-directory: obi
+
+      - name: Check package
+        run: |
+          twine check dist/*
+        working-directory: obi
+        continue-on-error: true
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --cov=obi --cov-report=xml
+        working-directory: obi
+        continue-on-error: true
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./obi/coverage.xml
+        continue-on-error: true
+
+      - name: Store build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: obi/dist/
+          retention-days: 7
+
+  publish:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release'
+    environment:
+      name: pypi
+      url: https://pypi.org/project/obi-sdk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine cython cmake setuptools wheel
+
+      - name: Build distribution packages
+        run: |
+          cd obi
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: obi/dist/
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: obi/dist/*
+          draft: false
+          prerelease: contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
