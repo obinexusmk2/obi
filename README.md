@@ -1,4 +1,15 @@
 # Ontological Bayesian Intelligence
+OBI is NOT:
+- a chatbot
+- a neural network
+- a replacement for human judgment
+- a black-box prediction engine
+
+OBI IS:
+- a reasoning framework
+- a governance-aware inference engine
+- a confidence-based decision system
+- an epistemic audit layer
 
 **A reasoning framework for bias-free, consensus systems.**
 
