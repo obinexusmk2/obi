@@ -2,20 +2,21 @@
 
 include README.md
 include LICENSE
-include setup.py
 include pyproject.toml
 
 # Include all Python and Cython source files
 recursive-include obi *.py *.pyx *.pxd *.h
 
 # Include proofs and specifications
-recursive-include proofs *.md *.pdf
+recursive-include docs *.md *.pdf *.docx *.txt
+recursive-include peer-review *.md *.pdf *.docx
 
 # Include examples
 recursive-include examples *.py *.md
 
 # Include tests
-recursive-include tests *.py
+recursive-include obi/tests *.py
+recursive-include obi/core/tests *.py
 
 # Include transcripts and pseudocode (source of truth design)
 recursive-include transcripts *.txt *.md

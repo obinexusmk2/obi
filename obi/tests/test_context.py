@@ -1,64 +1,40 @@
-"""
-Tests for OBI Context management
-"""
+"""Package and OBIContext smoke tests."""
 
-import pytest
-import sys
-import platform
+from obi import OBIContext, ReasoningResult
 
 
-def test_import():
-    """Test that Cython extensions can be imported"""
-    from obi_sdk.bindings import _core
-    assert hasattr(_core, 'OBIContext')
+def test_package_import_surface():
+    import obi
+
+    assert obi.__version__ == "0.1.0-alpha"
+    assert hasattr(obi, "OBIContext")
+    assert hasattr(obi, "internal_probe")
+    assert hasattr(obi, "DataProbeAdapter")
 
 
-def test_context_creation():
-    """Test basic context creation"""
-    from obi_sdk.sdk.core.context import OBIContext
-    
-    ctx = OBIContext(config={"test": True})
-    assert ctx.is_valid()
-    assert ctx.id.startswith("ctx_")
-    ctx.close()
+def test_context_creation_and_reasoning():
+    ctx = OBIContext(confidence_threshold=0.954)
+    state = ctx.probe_internal(
+        {
+            "speed_mph": 65,
+            "distance_m": 50,
+            "friction": 0.45,
+        }
+    )
+    result = ctx.infer(state)
+
+    assert isinstance(result, ReasoningResult)
+    assert result.action == "BRAKE"
+    assert result.confidence >= 0.954
+    assert "FACT:" in result.reasoning_chain
 
 
-def test_context_version():
-    """Test version retrieval"""
-    from obi_sdk.sdk.core.context import OBIContext
-    
-    with OBIContext() as ctx:
-        version = ctx.version
-        assert isinstance(version, str)
-        assert len(version) > 0
-
-
-def test_context_registry():
-    """Test context registry management"""
-    from obi_sdk.sdk.core.context import OBIContext
-    
-    OBIContext.shutdown_all()  # Clean slate
-    
-    ctx1 = OBIContext(context_id="test1")
-    ctx2 = OBIContext(context_id="test2")
-    
-    active = OBIContext.get_active_contexts()
-    assert "test1" in active
-    assert "test2" in active
-    
-    OBIContext.shutdown_all()
-    assert len(OBIContext.get_active_contexts()) == 0
-
-
-@pytest.mark.skipif(
-    not ("microsoft" in platform.release().lower() or "WSL" in platform.release()),
-    reason="WSL-specific test"
-)
-def test_wsl_library_path():
-    """Test library path setup in WSL"""
-    from obi_sdk.sdk.core.context import OBIContext
-    
-    # Should not raise even with complex paths
+def test_context_history_is_copied():
     ctx = OBIContext()
-    assert ctx.is_valid()
-    ctx.close()
+    state = ctx.probe_internal({"speed_mph": 30, "distance_m": 150, "friction": 0.7})
+    ctx.infer(state)
+
+    history = ctx.get_history()
+    history.clear()
+
+    assert len(ctx.get_history()) == 1

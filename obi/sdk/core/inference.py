@@ -5,7 +5,7 @@ Implements top-down and bottom-up reasoning patterns as described
 in the OBI AI hypothesis documentation.
 """
 
-from typing import List, Tuple, Optional, Callable
+from typing import List, Tuple, Optional
 import numpy as np
 from enum import Enum, auto
 
@@ -114,9 +114,11 @@ class BayesianEngine:
         prior: Optional[np.ndarray]
     ) -> np.ndarray:
         """Inductive reasoning from specific to general"""
-        # Pattern recognition with explicit uncertainty quantification
+        # Pattern recognition with explicit uncertainty quantification.
+        # Keep the posterior in the same 4D tensor space so it can be combined
+        # with top-down reasoning without shape drift.
         patterns = self._extract_patterns(evidence)
-        posterior = self._generalize_patterns(patterns, prior)
+        posterior = self._generalize_patterns(patterns, prior, evidence.shape)
         
         self._inference_chain.append({
             "step": "bottom_up_generalization",
@@ -146,29 +148,37 @@ class BayesianEngine:
         return np.exp(evidence - np.max(evidence))
     
     def _extract_patterns(self, evidence: np.ndarray) -> List[np.ndarray]:
-        """Extract patterns using K-means clustering (K-clustering per OBI docs)"""
-        from sklearn.cluster import KMeans
+        """Extract simple K-style clusters without requiring sklearn at runtime."""
         flat = evidence.reshape(-1, evidence.shape[-1])
-        kmeans = KMeans(n_clusters=min(8, len(flat)), random_state=42)
-        kmeans.fit(flat)
-        return [flat[kmeans.labels_ == i] for i in range(kmeans.n_clusters)]
+        if len(flat) == 0:
+            return []
+        k = min(8, len(flat))
+        order = np.argsort(np.linalg.norm(flat, axis=1))
+        return [chunk for chunk in np.array_split(flat[order], k) if len(chunk) > 0]
     
     def _generalize_patterns(
         self,
         patterns: List[np.ndarray],
-        prior: Optional[np.ndarray]
+        prior: Optional[np.ndarray],
+        target_shape: tuple
     ) -> np.ndarray:
         """Generalize from patterns to distribution"""
         if not patterns:
-            return np.ones_like(prior) / prior.size if prior is not None else np.array([0.5])
+            base = np.ones(target_shape, dtype=np.float64)
+            return base / base.size
         
         # Weight by pattern size (more data = more weight)
         weights = np.array([len(p) for p in patterns])
         weights = weights / weights.sum()
         
-        # Combine patterns
+        # Combine patterns, then expand back into the requested tensor shape.
         combined = np.average([p.mean(axis=0) for p in patterns], weights=weights, axis=0)
-        return combined
+        tiled = np.resize(np.abs(combined), int(np.prod(target_shape))).reshape(target_shape)
+        total = np.sum(tiled)
+        if total <= 0 or not np.isfinite(total):
+            tiled = np.ones(target_shape, dtype=np.float64)
+            total = tiled.size
+        return tiled / total
     
     def _entropy(self, dist: np.ndarray) -> float:
         """Compute Shannon entropy for uncertainty quantification"""

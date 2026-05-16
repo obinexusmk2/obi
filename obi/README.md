@@ -121,7 +121,7 @@ obi/        → SDK + protocol development   (Python/Cython/C/Lua/Go)
 ### Repository Layout
 
 ```
-obi-sdk/
+obi/
 ├── bindings/           # Cython/C interface layer
 │   ├── cython/         # .pyx and .pxd files
 │   └── c/              # C headers for libpolycall-v1
@@ -219,41 +219,41 @@ The SDK is grounded in the MMUKO-OS 6-phase constitutional boot model. Boot proc
 ```bash
 # Clone
 git clone https://github.com/obinexusmk2/obi.git
-cd obi/obi-sdk
+cd obi
 
 # Create environment
 conda env create -f environment.yml
-conda activate obi-sdk-dev
+conda activate obi-dev
 
 # Install Cython (required — build will fail without it)
 conda install -c conda-forge "cython>=3.0.0"
 
-# Build Cython extensions
-python setup.py build_ext --inplace
-
-# Or full package build
+# Build package
 python -m build
+
+# Or install directly from GitHub
+pip install git+https://www.github.com/obinexusmk2/obi.git
 ```
 
 ### Usage
 
 ```python
-from obi_sdk.sdk.core.context import OBIContext
-from obi_sdk.sdk.core.inference import BayesianEngine, ReasoningMode
+from obi import OBIContext
+from obi.sdk.core.inference import BayesianEngine, ReasoningMode
 import numpy as np
 
-with OBIContext(config={"model": "standard"}) as ctx:
-    engine = BayesianEngine(
-        ctx,
-        mode=ReasoningMode.BIDIRECTIONAL,
-        confidence_threshold=0.954   # 95.4% — mu + 2 sigma
-    )
+ctx = OBIContext(config={"model": "standard"})
+engine = BayesianEngine(
+    ctx,
+    mode=ReasoningMode.BIDIRECTIONAL,
+    confidence_threshold=0.954   # 95.4% - mu + 2 sigma
+)
 
-    evidence = np.random.rand(1, 3, 64, 64)   # 4D tensor input
-    result, metadata = engine.infer(evidence)
+evidence = np.random.rand(1, 3, 64, 64)   # 4D tensor input
+result, metadata = engine.infer(evidence)
 
-    print(f"Result shape: {result.shape}")
-    print(f"Inference chain: {metadata['chain']}")
+print(f"Result shape: {result.shape}")
+print(f"Inference chain: {metadata['chain']}")
 ```
 
 ---
@@ -285,7 +285,7 @@ with OBIContext(config={"model": "standard"}) as ctx:
 
 | Milestone | Description | Gate |
 |-----------|-------------|------|
-| M0 | Build unblocked — Cython installed, `import obi_sdk` succeeds | Build |
+| M0 | Build unblocked — `import obi` succeeds | Build |
 | M1 | DIRAM core live — SHA-256 receipts, Sinphase governance passing tests | Dev-Gate 90% |
 | M2 | Filter-Flash engine — BayesianEngine with 95.4% threshold on Triangi dataset | Dev-Gate 90% |
 | M3 | NSIGII bindings — Trident CH0/CH1/CH2 loopback channels, HMAC-SHA256 packets | Dev-Gate 90% |

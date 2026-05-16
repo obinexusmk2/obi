@@ -23,13 +23,13 @@ __version__ = "0.1.0-alpha"
 __author__ = "Nnamdi Michael Okpala (OBINexus)"
 
 # Conditional environment setup
-if ! conda env list | grep -q "obi-sdk-dev"; then
+if ! conda env list | grep -q "obi-dev"; then
     echo "Creating conda environment..."
     conda env create -f environment.yml
 fi
 
 # Activate environment
-conda activate obi-sdk-dev
+conda activate obi-dev
 
 # Clone dependencies if not present
 if [ ! -d "../libpolycall-v1" ]; then
@@ -41,4 +41,4 @@ fi
 ./scripts/build.sh Release
 
 echo "Installation complete!"
-echo "Activate with: conda activate obi-sdk-dev"
+echo "Activate with: conda activate obi-dev"

@@ -16,8 +16,27 @@ Entry-point for OBI reasoning:
 """
 
 from obi.sdk.core import OBIContext, ReasoningResult
+from obi.core import (
+    Config,
+    DataProbeAdapter,
+    ProbeEngine,
+    ProbeResult,
+    external_probe,
+    internal_probe,
+    probe_alignment,
+)
 
 __version__ = "0.1.0-alpha"
 __author__ = "Nnamdi Michael Okpala (OBINexus)"
 
-__all__ = ["OBIContext", "ReasoningResult"]
+__all__ = [
+    "OBIContext",
+    "ReasoningResult",
+    "Config",
+    "ProbeEngine",
+    "ProbeResult",
+    "DataProbeAdapter",
+    "internal_probe",
+    "external_probe",
+    "probe_alignment",
+]

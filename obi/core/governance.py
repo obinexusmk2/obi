@@ -71,6 +71,8 @@ def compute_epistemic_confidence(state_vector: S) -> float:
 
     # Energy concentration in the dominant dimension (scale-invariant)
     normalised = flat / norm
+    if not np.all(np.isfinite(normalised)):
+        return 0.0
     return float(np.max(normalised ** 2))
 
 

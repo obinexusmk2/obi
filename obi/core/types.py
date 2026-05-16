@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -96,7 +96,9 @@ class ProbeResult:
     confidence: float
     channel: Channel
     receipt: str
-    provenance: dict = field(default_factory=dict)
+    provenance: Dict[str, Any] = field(default_factory=dict)
+    data: Optional[D] = None
+    event: Optional[Dict[str, Any]] = None
 
     @property
     def is_collapsed(self) -> bool:

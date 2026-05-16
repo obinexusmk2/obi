@@ -1,6 +1,6 @@
-# PyPI Publishing Setup Guide for obi-sdk
+# PyPI Publishing Setup Guide for obi
 
-This guide walks you through setting up automated PyPI publishing for the **obi-sdk** package using GitHub Actions.
+This guide walks you through setting up automated PyPI publishing for the **obi** package using GitHub Actions.
 
 ## Overview
 
@@ -22,7 +22,7 @@ The publishing workflow (`.github/workflows/publish.yml`) is configured to:
 1. Log in to PyPI at [https://pypi.org/manage/account/](https://pypi.org/manage/account/)
 2. Go to **Account settings** → **API tokens**
 3. Click **Add API token**
-4. Name it: `obi-sdk-gh-actions` (or similar)
+4. Name it: `obi-gh-actions` (or similar)
 5. Scope: Select **Entire account** (or specific project if you have it on PyPI already)
 6. Click **Create token**
 7. **Copy the token** (you'll only see it once!)
@@ -34,7 +34,7 @@ The publishing workflow (`.github/workflows/publish.yml`) is configured to:
 
 ## Step 2: Reserve the PyPI Package Name
 
-1. Go to [https://pypi.org/project/obi-sdk/](https://pypi.org/project/obi-sdk/)
+1. Go to [https://pypi.org/project/obi/](https://pypi.org/project/obi/)
 2. If the package doesn't exist, you don't need to do anything—it will be created on first publish
 3. If it exists and is owned by someone else, contact them or choose a different name
 
@@ -99,7 +99,7 @@ In `obi/pyproject.toml`, update the version:
 
 ```toml
 [project]
-name = "obi-sdk"
+name = "obi"
 version = "0.1.0"              # ← Change from "0.1.0-alpha"
 ```
 
@@ -188,11 +188,11 @@ This creates a GitHub Release and publishes to PyPI.
 After the workflow completes:
 
 1. Check **GitHub Actions** tab for successful run
-2. Visit [https://pypi.org/project/obi-sdk/](https://pypi.org/project/obi-sdk/)
+2. Visit [https://pypi.org/project/obi/](https://pypi.org/project/obi/)
 3. Verify your package appears with the correct version
 4. Test installation:
    ```bash
-   pip install obi-sdk==0.1.0
+   pip install obi==0.1.0
    ```
 
 ---
@@ -213,7 +213,7 @@ After the workflow completes:
 **Cause**: Someone else owns the package name on PyPI
 
 **Solution**:
-1. Choose a different package name (e.g., `obi-sdk-nnamdi`)
+1. Choose a different package name (e.g., `obi-nnamdi`)
 2. Update `name` in `obi/pyproject.toml`
 3. Update the workflow (if needed)
 
@@ -289,4 +289,3 @@ If you encounter problems:
 2. Review logs for each failed step
 3. Check PyPI account for publishing history
 4. Verify `pyproject.toml` syntax with: `python -m tomli obi/pyproject.toml`
-

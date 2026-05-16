@@ -19,7 +19,7 @@ cd "$PROJECT_ROOT"
 if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
     echo "Conda environment: $CONDA_DEFAULT_ENV"
 else
-    echo "WARNING: Not in conda environment. Activate with: conda activate obi-sdk-dev"
+    echo "WARNING: Not in conda environment. Activate with: conda activate obi-dev"
     exit 1
 fi
 

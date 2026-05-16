@@ -3,8 +3,7 @@
 build_cython.py - Cython extension definitions for the OBIAI SDK obi/ workspace.
 
 Provides get_extensions() consumed by the root setup.py. Platform detection
-mirrors the logic from the original obi-sdk/setup.py but with corrected paths
-rooted at obi/ instead of obi-sdk/.
+mirrors the original extension build logic with paths rooted at obi/.
 """
 
 from __future__ import annotations
@@ -171,7 +170,7 @@ if __name__ == "__main__":
     print(f"Platform: Windows={IS_WINDOWS}, WSL={IS_WSL}, Linux={IS_LINUX}")
 
     # Probe libpolycall-v1
-    libpoly = os.environ.get("LIBPOLYCALL_ROOT", str(root / "obi-sdk" / "libpolycall-v1"))
+    libpoly = os.environ.get("LIBPOLYCALL_ROOT", str(root / "obi" / "libpolycall-v1"))
     libpoly_path = Path(libpoly)
     print(f"libpolycall-v1: {libpoly_path} ({'found' if libpoly_path.exists() else 'NOT FOUND'})")
 

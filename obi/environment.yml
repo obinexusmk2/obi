@@ -1,4 +1,4 @@
-name: obi-sdk-dev
+name: obi-dev
 channels:
   - conda-forge
   - defaults

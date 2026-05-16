@@ -1,6 +1,6 @@
 # PyPI Publishing Setup Checklist
 
-Complete these steps in order to set up automated PyPI publishing for obi-sdk.
+Complete these steps in order to set up automated PyPI publishing for obi.
 
 ## Prerequisites
 - [ ] GitHub account with access to `obinexusmk2/obi` repository
@@ -12,7 +12,7 @@ Complete these steps in order to set up automated PyPI publishing for obi-sdk.
 - [ ] **Step 1.1**: Create PyPI account at https://pypi.org/account/register/
 - [ ] **Step 1.2**: Verify PyPI email address
 - [ ] **Step 1.3**: Go to https://pypi.org/manage/account/ → API tokens
-- [ ] **Step 1.4**: Create API token named `obi-sdk-gh-actions`
+- [ ] **Step 1.4**: Create API token named `obi-gh-actions`
 - [ ] **Step 1.5**: Copy token (starts with `pypi-`)
 - [ ] **Step 1.6**: Paste token in safe location (you'll need it in Phase 2)
 
@@ -57,9 +57,9 @@ Choose ONE option:
 ## Phase 6: Verification (1 minute)
 
 - [ ] **Step 6.1**: Check GitHub Actions for successful run ✓
-- [ ] **Step 6.2**: Visit https://pypi.org/project/obi-sdk/
+- [ ] **Step 6.2**: Visit https://pypi.org/project/obi/
 - [ ] **Step 6.3**: Verify package appears with correct version
-- [ ] **Step 6.4**: Test installation: `pip install obi-sdk==0.1.0`
+- [ ] **Step 6.4**: Test installation: `pip install obi==0.1.0`
 
 ---
 
@@ -109,7 +109,7 @@ git tag -a v0.1.0 -m "Release version 0.1.0"
 git push origin v0.1.0
 
 # Check package locally (after publishing)
-pip install obi-sdk==0.1.0
+pip install obi==0.1.0
 ```
 
 ---
@@ -151,4 +151,3 @@ Once publishing is working:
 **Last Updated**: 2026-05-15  
 **Workflow File**: `.github/workflows/publish.yml`  
 **For Questions**: See PYPI_PUBLISHING_GUIDE.md
-

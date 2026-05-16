@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#93032e">
+  <title>OBIX — Heart UI/UX Library</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <style>
+    :root {
+      --burgundy: #93032e;
+      --ebony: #5f634f;
+      --amber: #ffc100;
+      --vanilla: #ffeaae;
+      --prussian: #001427;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--prussian);
+      color: var(--vanilla);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      border-bottom: 1px solid var(--burgundy);
+      padding-bottom: 1rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      color: var(--amber);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    header p {
+      font-size: 0.75rem;
+      color: var(--ebony);
+      margin-top: 0.5rem;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .demo-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--ebony);
+      border-radius: 4px;
+      padding: 1.5rem;
+    }
+
+    .demo-card h2 {
+      font-size: 0.7rem;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+    }
+
+    .demo-card .mount-target {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }
+
+    .obix-btn {
+      background: transparent;
+      border: 1px solid var(--burgundy);
+      color: var(--vanilla);
+      padding: 0.6rem 1.4rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .obix-btn:hover { background: var(--burgundy); color: var(--amber); }
+    .obix-btn--on { border-color: var(--amber); color: var(--amber); }
+
+    .bijection-badge {
+      font-size: 0.65rem;
+      color: var(--ebony);
+      margin-top: 1rem;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--ebony);
+      display: inline-block;
+      letter-spacing: 0.1em;
+    }
+
+    footer {
+      font-size: 0.65rem;
+      color: var(--ebony);
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>OBIX — Heart UI/UX</h1>
+    <p>OBINexus Data Origin Pattern · Bijection: Functional ↔ OOP</p>
+  </header>
+
+  <div class="demo-grid">
+    <div class="demo-card">
+      <h2>Functional Form</h2>
+      <div class="mount-target" id="func-mount"></div>
+      <div class="bijection-badge" id="func-badge">origin: functional</div>
+    </div>
+    <div class="demo-card">
+      <h2>OOP Form</h2>
+      <div class="mount-target" id="oop-mount"></div>
+      <div class="bijection-badge" id="oop-badge">origin: oop</div>
+    </div>
+  </div>
+
+  <footer>
+    Breathing without Living is Suffering · When System Fails, Build Your Own
+  </footer>
+
+  <!-- OBIX Bundle -->
+  <script src="/bundle.js"></script>
+  <script>
+    // Register service worker for PWA installability
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+
+    // Mount functional form (static render)
+    document.getElementById('func-mount').innerHTML = OBIX.functional('Button');
+
+    // Mount OOP form (stateful, interactive)
+    const oopInstance = OBIX.oop('Button');
+    const oopMount = document.getElementById('oop-mount');
+    oopMount.innerHTML = oopInstance.render();
+
+    // Wire up OOP button interactivity
+    oopMount.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        oopInstance.toggle();
+        oopMount.innerHTML = oopInstance.render();
+        document.getElementById('oop-badge').textContent =
+          `state: ${JSON.stringify(oopInstance.state)}`;
+      }
+    });
+
+    // Bijection check at runtime
+    const funcOut = OBIX.functional('Button');
+    const oopOut = OBIX.oop('Button').render();
+    const bijection = funcOut === oopOut;
+    document.getElementById('func-badge').textContent =
+      `bijection: ${bijection ? '✓ verified' : '✗ FAILED'}`;
+  </script>
+</body>
+</html>

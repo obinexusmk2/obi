@@ -31,10 +31,10 @@ It's not a neural network. It's not pattern matching. It's something different: 
 You can use OBI directly in Python apps, web services, robotics, data pipelines, accessibility systems—anywhere you need a system to *think* instead of just *react*.
 
 ```bash
-pip install obi
+pip install git+https://www.github.com/obinexusmk2/obi.git
 ```
 
-That's it. No frameworks. No bloated dependencies. Just reasoning.
+That's it. One package identity: `obi`, imported with `from obi import ...`.
 
 ---
 
@@ -111,6 +111,21 @@ This is **rhetorical reasoning**. Not rhetoric as empty words—rhetoric as *jus
 ## The Probe Duality
 
 At the heart of OBI is a simple but powerful idea: **the system must observe itself**.
+
+In API terms, the proof surface is:
+
+```python
+from obi import external_probe, internal_probe, probe_alignment
+
+state_result = internal_probe(data)              # P_internal: Data -> State
+data_result = external_probe(state, event=None)  # P_external: State/Event -> Data
+match_result = probe_alignment(data, state)      # state/data mismatch gate
+```
+
+Each call returns a `ProbeResult` with `channel`, `confidence`, `receipt`, and
+`provenance`. `CH_2` means the state is safe to collapse or emit. `CH_1` means
+the state/data relationship failed the 95.4% gate and should defer to human or
+caller review.
 
 ### **P_external: State → Data** (What we emit)
 
@@ -246,7 +261,7 @@ In 234 milliseconds:
 ### Install
 
 ```bash
-pip install obi
+pip install git+https://www.github.com/obinexusmk2/obi.git
 ```
 
 ### Your First OBI Context
@@ -261,26 +276,23 @@ ctx = OBIContext(
     reasoning_mode="bidirectional"  # Top-down + bottom-up
 )
 
-# Use the context
-with ctx:
-    # Observe real-world data
-    sensor_data = {
-        "speed_mph": 65,
-        "distance_m": 50,
-        "rain": True,
-        "friction": 0.45
-    }
-    
-    # OBI probes the data (P_internal: data → state)
-    state = ctx.probe_internal(sensor_data)
-    
-    # OBI reasons through the state
-    decision = ctx.infer(state)
-    
-    # OBI emits the reasoning (P_external: state → data)
-    print(f"Action: {decision.action}")
-    print(f"Confidence: {decision.confidence:.1%}")
-    print(f"Reasoning: {decision.reasoning}")
+# Observe real-world data
+sensor_data = {
+    "speed_mph": 65,
+    "distance_m": 50,
+    "rain": True,
+    "friction": 0.45
+}
+
+# OBI probes the data (P_internal: Data -> State)
+state = ctx.probe_internal(sensor_data)
+
+# OBI reasons through the state
+decision = ctx.infer(state)
+
+print(f"Action: {decision.action}")
+print(f"Confidence: {decision.confidence:.1%}")
+print(f"Reasoning: {decision.reasoning_chain}")
 ```
 
 **Output:**
@@ -308,14 +320,13 @@ patient_data = {
     "family_history": True
 }
 
-with ctx:
-    state = ctx.probe_internal(patient_data)
-    decision = ctx.infer(state)
-    
-    print(f"Diagnosis: {decision.action}")
-    print(f"Confidence: {decision.confidence:.1%}")
-    print(f"Bias Check: {decision.bias_parameter:.2%}")
-    print(f"Reasoning: {decision.reasoning}")
+state = ctx.probe_internal(patient_data)
+decision = ctx.infer(state)
+
+print(f"Diagnosis: {decision.action}")
+print(f"Confidence: {decision.confidence:.1%}")
+print(f"Bias Check: {decision.bias_parameter:.2%}")
+print(f"Reasoning: {decision.reasoning_chain}")
 ```
 
 **Output:**
@@ -482,7 +493,7 @@ OBI just makes sure all three are aligned.
 
 ## Next Steps
 
-1. **Install**: `pip install obi`
+1. **Install**: `pip install git+https://www.github.com/obinexusmk2/obi.git`
 2. **Read the docs**: [github.com/obinexusmk2/obi](https://github.com/obinexusmk2/obi)
 3. **Read the proofs**: The `proofs/` folder has 40+ formal specifications
 4. **Try the examples**: `examples/` folder has robotic cars, medical AI, accessibility systems
@@ -506,4 +517,3 @@ Built with ❤️ by **Nnamdi Michael Okpala** and the OBINexus community.
 
 > *"The future of AI is not about who can build the largest model.*  
 > *It's about who can build the most trustworthy one."*
-

@@ -225,8 +225,8 @@ def migrate_pyx_files(monorepo_root: Path) -> None:
     Migration map:
       bindings/cython/_core.pyx           → obi/bindings/cython/_core.pyx
       drivers/core/_poly_driver.pyx       → obi/drivers/core/_poly_driver.pyx
-      obi-sdk/bindings/cython/*.pxd       → obi/bindings/cython/
-      obi-sdk/bindings/c/include/*        → obi/bindings/c/include/
+      obi/bindings/cython/*.pxd       → obi/bindings/cython/
+      obi/bindings/c/include/*        → obi/bindings/c/include/
     """
     print("[migrate] Migrating .pyx / .pxd / header files...")
 
@@ -240,7 +240,7 @@ def migrate_pyx_files(monorepo_root: Path) -> None:
             monorepo_root / "obi" / "drivers" / "core" / "_poly_driver.pyx",
         ),
         (
-            monorepo_root / "obi-sdk" / "bindings" / "cython" / "libpolycall.pxd",
+            monorepo_root / "obi" / "bindings" / "cython" / "libpolycall.pxd",
             monorepo_root / "obi" / "bindings" / "cython" / "libpolycall.pxd",
         ),
     ]
@@ -250,7 +250,7 @@ def migrate_pyx_files(monorepo_root: Path) -> None:
 
     # Bulk-copy C headers
     copy_tree_if_newer(
-        monorepo_root / "obi-sdk" / "bindings" / "c" / "include",
+        monorepo_root / "obi" / "bindings" / "c" / "include",
         monorepo_root / "obi" / "bindings" / "c" / "include",
     )
 
@@ -282,7 +282,7 @@ REQUIRED_FILES: List[str] = [
     "obi/sdk/cython/__init__.py",
     "obi/misc/__init__.py",
     "setup.py",
-    "setup-obi-sdk-monorepo.py",
+    "setup-obi-monorepo.py",
 ]
 
 

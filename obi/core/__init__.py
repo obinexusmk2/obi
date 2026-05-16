@@ -23,7 +23,8 @@ from .governance import (
     generate_diram_receipt,
     validate_gate,
 )
-from .probe import ProbeEngine
+from .adapter import DataProbeAdapter, FunctionalProbe
+from .probe import ProbeEngine, external_probe, internal_probe, probe_alignment
 from .types import (
     Channel,
     Config,
@@ -37,6 +38,11 @@ from .types import (
 __all__ = [
     # Probe engine
     "ProbeEngine",
+    "DataProbeAdapter",
+    "FunctionalProbe",
+    "internal_probe",
+    "external_probe",
+    "probe_alignment",
     # Types
     "D",
     "S",
