@@ -264,14 +264,80 @@ In 234 milliseconds:
 pip install git+https://www.github.com/obinexusmk2/obi.git
 ```
 
+### Your First OBI Debiasing Pipeline
+
+```python
+import obi
+
+data = obi.dataset(
+    X=[
+        [0.0, 1.0],
+        [0.0, 0.9],
+        [1.0, 0.2],
+        [1.0, 0.1],
+    ],
+    y=[1, 1, 0, 0],
+    protected=[0, 0, 1, 1],
+    feature_names=["proxy_feature", "clinical_signal"],
+    model_config={"imbalance_sensitive": True},
+)
+
+report = obi.audit(data)
+
+graph = obi.dag(
+    nodes=[
+        obi.variable("S", "binary"),
+        obi.variable("C", "binary"),
+        obi.variable("T", "real"),
+        obi.variable("A", "protected_set"),
+        obi.variable("phi", "bias", observed=False),
+        obi.variable("theta", "parameters", observed=False),
+    ],
+    edges=[
+        ("S", "C"),
+        ("A", "C"),
+        ("A", "T"),
+        ("C", "T"),
+        ("phi", "T"),
+        ("theta", "C"),
+    ],
+)
+
+result = obi.debias(data, graph)
+validation = obi.validate(result, epsilon=0.05, policy="warn")
+
+print(report.any_bias_found)
+print(result.theta)
+print(validation.parity_ok)
+```
+
+### Data Drift Mitigation
+
+```python
+import obi
+
+baseline = obi.data_point([1.0, 0.0, 0.0])
+current = obi.data_point(
+    [0.0, 1.0, 0.0],
+    drift_source="human_context",
+    metadata={"cultural_context": "nsibidi", "love_anchor": "community"},
+)
+
+result = obi.mitigate_drift(current, baseline)
+
+print(result.observation.zone)
+print(result.cascade.get_active_tiers())
+print(result.output.coherence)
+```
+
 ### Your First OBI Context
 
 ```python
-from obi import OBIContext
+import obi
 
 # Create a reasoning context
 # confidence_threshold defaults to 0.954 (95.4% - the safety clamp)
-ctx = OBIContext(
+ctx = obi.context(
     confidence_threshold=0.954,
     reasoning_mode="bidirectional"  # Top-down + bottom-up
 )
@@ -305,9 +371,9 @@ Reasoning: Physics constraint. Braking distance (96.5m) exceeds available distan
 ### Real Example: Medical AI
 
 ```python
-from obi import OBIContext
+import obi
 
-ctx = OBIContext(reasoning_mode="bidirectional")
+ctx = obi.context(reasoning_mode="bidirectional")
 
 # Cancer detection case: Black patient, age 45, no smoking history
 # (An outlier to most trained models)
@@ -362,7 +428,7 @@ OBI is built in layers:
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Application Layer (Your Code)                          │
-│  from obi import OBIContext                             │
+│  import obi; ctx = obi.context()                        │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐

@@ -238,22 +238,57 @@ pip install git+https://www.github.com/obinexusmk2/obi.git
 ### Usage
 
 ```python
-from obi import OBIContext
-from obi.sdk.core.inference import BayesianEngine, ReasoningMode
-import numpy as np
+import obi
 
-ctx = OBIContext(config={"model": "standard"})
-engine = BayesianEngine(
-    ctx,
-    mode=ReasoningMode.BIDIRECTIONAL,
-    confidence_threshold=0.954   # 95.4% - mu + 2 sigma
+data = obi.dataset(
+    X=[[0.0, 1.0], [0.0, 0.9], [1.0, 0.2], [1.0, 0.1]],
+    y=[1, 1, 0, 0],
+    protected=[0, 0, 1, 1],
+    feature_names=["proxy_feature", "clinical_signal"],
+    model_config={"imbalance_sensitive": True},
 )
 
-evidence = np.random.rand(1, 3, 64, 64)   # 4D tensor input
-result, metadata = engine.infer(evidence)
+graph = obi.dag(
+    nodes=[
+        obi.variable("S", "binary"),
+        obi.variable("C", "binary"),
+        obi.variable("T", "real"),
+        obi.variable("A", "protected_set"),
+        obi.variable("phi", "bias", observed=False),
+        obi.variable("theta", "parameters", observed=False),
+    ],
+    edges=[
+        ("S", "C"),
+        ("A", "C"),
+        ("A", "T"),
+        ("C", "T"),
+        ("phi", "T"),
+        ("theta", "C"),
+    ],
+)
 
-print(f"Result shape: {result.shape}")
-print(f"Inference chain: {metadata['chain']}")
+audit = obi.audit(data)
+result = obi.debias(data, graph)
+validation = obi.validate(result, epsilon=0.05, policy="warn")
+
+print(audit.any_bias_found)
+print(result.theta)
+print(validation.parity_ok)
+```
+
+### Data Drift Mitigation
+
+```python
+import obi
+
+baseline = obi.data_point([1.0, 0.0, 0.0])
+current = obi.data_point([0.0, 1.0, 0.0], drift_source="human_context")
+
+result = obi.mitigate_drift(current, baseline)
+
+print(result.observation.zone)
+print(result.cascade.get_active_tiers())
+print(result.output.coherence)
 ```
 
 ---

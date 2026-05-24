@@ -7,6 +7,13 @@ def test_package_import_surface():
     import obi
 
     assert obi.__version__ == "0.1.0-alpha"
+    assert hasattr(obi, "context")
+    assert hasattr(obi, "dataset")
+    assert hasattr(obi, "dag")
+    assert hasattr(obi, "debias")
+    assert hasattr(obi, "validate")
+    assert hasattr(obi, "data_point")
+    assert hasattr(obi, "mitigate_drift")
     assert hasattr(obi, "OBIContext")
     assert hasattr(obi, "internal_probe")
     assert hasattr(obi, "DataProbeAdapter")
@@ -38,3 +45,20 @@ def test_context_history_is_copied():
     history.clear()
 
     assert len(ctx.get_history()) == 1
+
+
+def test_top_level_context_factory_matches_public_api_name():
+    import obi
+
+    ctx = obi.context(confidence_threshold=0.954)
+    state = ctx.probe_internal(
+        {
+            "speed_mph": 65,
+            "distance_m": 50,
+            "friction": 0.45,
+        }
+    )
+    result = ctx.infer(state)
+
+    assert isinstance(result, ReasoningResult)
+    assert result.action == "BRAKE"
